@@ -33,10 +33,7 @@ public class UserService {
 
     @Transactional
     public void createUser(UserDto dto) {
-        User userFromDb = userRepository.findUserByLogin(dto.getLogin());
-        if (userFromDb != null) {
-
-        }
+        userRepository.save(userConverter.convertFromDto(dto));
     }
 
     @Transactional

@@ -2,8 +2,8 @@ package ru.romanov.shop.web.app.entity;
 
 
 import lombok.Data;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.LastModifiedDate;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
@@ -13,11 +13,11 @@ import java.util.Date;
 @Data
 public class BaseEntity {
 
-    @CreatedDate
+    @CreationTimestamp
     @Column(name = "created")
     private Date created;
 
-    @LastModifiedDate
+    @UpdateTimestamp
     @Column(name = "updated")
     private Date updated;
 }
