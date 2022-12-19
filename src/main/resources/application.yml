@@ -19,4 +19,3 @@ spring:
     url: jdbc:postgresql://localhost:5432/demodb
     user: demo
     password: demo
-
