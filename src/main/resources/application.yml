@@ -3,15 +3,20 @@ server:
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/demodb
     driver-class-name: org.postgresql.Driver
+    username: demo
+    password: demo
 
   jpa:
     show-sql: false
     hibernate:
       ddl-auto: validate
+    open-in-view: false
 
   liquibase:
     change-log: classpath:liquibase/db.changelog-master.xml
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/demodb
+    user: demo
+    password: demo
 
