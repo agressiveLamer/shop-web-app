@@ -1,17 +1,15 @@
 package ru.romanov.shop.web.app.security.jwt;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Getter;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
 @RequiredArgsConstructor
-@Setter
-@Getter
+@Data
 public class JwtUser implements UserDetails {
 
     private final Long id;
@@ -30,6 +28,7 @@ public class JwtUser implements UserDetails {
         return authorities;
     }
 
+    @JsonIgnore
     @Override
     public String getPassword() {
         return password;

@@ -1,7 +1,6 @@
 package ru.romanov.shop.web.app.security;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -11,7 +10,6 @@ import ru.romanov.shop.web.app.repository.UserRepository;
 import ru.romanov.shop.web.app.security.jwt.JwtUserFactory;
 
 @Service
-@Slf4j
 @RequiredArgsConstructor
 public class JwtUserDetailsService implements UserDetailsService {
 
