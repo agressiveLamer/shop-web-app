@@ -2,7 +2,6 @@ package ru.romanov.shop.web.app.security.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -19,6 +18,7 @@ import org.springframework.stereotype.Component;
 import ru.romanov.shop.web.app.entity.Role;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.IOException;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashSet;
@@ -29,8 +29,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
-
-    private static final Key SECRET = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    protected static final Key SECRET = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private static final Integer VALID_TIME_OUT = 3600000;
 
     private final UserDetailsService userDetailsService;
@@ -78,16 +77,12 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
-    public boolean isValidateToken(String token) {
-        try {
+    public boolean isValidateToken(String token) throws IOException {
             Jws<Claims> claims = Jwts.parserBuilder()
                     .setSigningKey(SECRET)
                     .build()
                     .parseClaimsJws(token);
             return !claims.getBody().getExpiration().before(new Date());
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new JwtAuthException("JWT token is expired or invalid");
-        }
     }
 
     private Set<String> getRoleNames(Set<Role> userRoles) {
