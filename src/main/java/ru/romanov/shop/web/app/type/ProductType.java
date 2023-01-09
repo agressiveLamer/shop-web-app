@@ -7,6 +7,4 @@ public enum ProductType {
     COSMETIC,
     ELECTRONICS,
     FOOD
-
-
 }

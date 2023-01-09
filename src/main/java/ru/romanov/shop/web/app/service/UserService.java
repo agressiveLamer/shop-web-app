@@ -4,19 +4,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.romanov.shop.web.app.converter.UserConverter;
 import ru.romanov.shop.web.app.dto.UserDto;
 import ru.romanov.shop.web.app.entity.Role;
 import ru.romanov.shop.web.app.entity.User;
-import ru.romanov.shop.web.app.repository.RoleRepository;
-import ru.romanov.shop.web.app.repository.UserRepository;
+import ru.romanov.shop.web.app.entity.repository.RoleRepository;
+import ru.romanov.shop.web.app.entity.repository.UserRepository;
+import ru.romanov.shop.web.app.exception.ResourceNotFoundException;
 
-import javax.transaction.Transactional;
 import java.util.HashSet;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,11 +27,11 @@ public class UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder bCryptPasswordEncoder;
 
-    @Transactional
-    public List<UserDto> getUsers() {
-        return userRepository.findAll().stream()
-                .map(userConverter::convertFromEntity)
-                .collect(Collectors.toList());
+    @Transactional(readOnly = true)
+    public UserDto getUsers(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User with id " + id + " not found"));
+        return userConverter.convertFromEntity(user);
     }
 
     @Transactional
@@ -41,6 +40,29 @@ public class UserService {
     }
 
     @Transactional
+    public void saveUser(UserDto dto){
+        if (dto.getId() == null){
+            Role userRole = roleRepository.findByName("USER_ROLE");
+            Set<Role> userRoles = new HashSet<>();
+            userRoles.add(userRole);
+
+            User user = userConverter.convertFromDto(dto);
+            user.setPassword(bCryptPasswordEncoder.encode(user.getPassword()));
+            user.setRole(userRoles);
+
+            User registeredUser = userRepository.save(user);
+
+            log.info("IN register - user: {} successfully registered", registeredUser);
+        }else {
+            User entity = userRepository.findById(dto.getId()).orElseThrow(NoSuchElementException::new);
+            entity.setLogin(dto.getLogin());
+            entity.setFullName(dto.getFullName());
+            userRepository.save(entity);
+        }
+
+    }
+
+   /* @Transactional
     public void createUser(UserDto dto) {
         Role userRole = roleRepository.findByName("USER_ROLE");
         Set<Role> userRoles = new HashSet<>();
@@ -61,5 +83,5 @@ public class UserService {
         entity.setLogin(dto.getLogin());
         entity.setFullName(dto.getFullName());
         userRepository.save(entity);
-    }
+    }*/
 }

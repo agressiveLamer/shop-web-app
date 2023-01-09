@@ -1,7 +1,8 @@
 package ru.romanov.shop.web.app.entity;
 
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -9,8 +10,9 @@ import javax.persistence.Column;
 import javax.persistence.MappedSuperclass;
 import java.util.Date;
 
+@Setter
+@Getter
 @MappedSuperclass
-@Data
 public class BaseEntity {
 
     @CreationTimestamp
@@ -20,4 +22,6 @@ public class BaseEntity {
     @UpdateTimestamp
     @Column(name = "updated")
     private Date updated;
+
+
 }

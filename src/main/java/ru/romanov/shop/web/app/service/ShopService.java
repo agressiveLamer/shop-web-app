@@ -1,10 +1,10 @@
 package ru.romanov.shop.web.app.service;
 
-import javax.transaction.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.romanov.shop.web.app.converter.CashReceiptConverter;
 import ru.romanov.shop.web.app.converter.ProductConverter;
 import ru.romanov.shop.web.app.dto.CashReceiptDto;
@@ -12,9 +12,10 @@ import ru.romanov.shop.web.app.dto.ProductDto;
 import ru.romanov.shop.web.app.entity.CashReceipt;
 import ru.romanov.shop.web.app.entity.Product;
 import ru.romanov.shop.web.app.entity.User;
-import ru.romanov.shop.web.app.repository.CashReceiptsRepository;
-import ru.romanov.shop.web.app.repository.ProductRepository;
-import ru.romanov.shop.web.app.repository.UserRepository;
+import ru.romanov.shop.web.app.entity.repository.CashReceiptsRepository;
+import ru.romanov.shop.web.app.entity.repository.ProductRepository;
+import ru.romanov.shop.web.app.entity.repository.UserRepository;
+import ru.romanov.shop.web.app.exception.ResourceNotFoundException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -32,7 +33,7 @@ public class ShopService {
     private final CashReceiptConverter cashReceiptConverter;
     private final UserRepository userRepository;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ProductDto> getAllProducts() {
         return productRepository.findAll()
                 .stream()
@@ -40,7 +41,7 @@ public class ShopService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ProductDto> getAllProductByName(String name) {
         return productRepository.findAllByName(name)
                 .stream()
@@ -48,7 +49,7 @@ public class ShopService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ProductDto> getAllProductByCost(Double cost) {
         return productRepository.findAllByCost(cost)
                 .stream()
@@ -56,7 +57,7 @@ public class ShopService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ProductDto> getAllByNameAndCost(String name, Double cost) {
         return productRepository.findAllByNameAndCost(name, cost)
                 .stream()
@@ -65,20 +66,20 @@ public class ShopService {
     }
 
     @Transactional
-    public void createProduct(ProductDto productDto) {
-        productRepository.save(productConverter.convertFromDto(productDto));
-    }
+    public void saveProduct(ProductDto dto){
+        if (dto.getId() == null){
+            productRepository.save(productConverter.convertFromDto(dto));
+        }else {
+            Product product;
+            Optional<Product> productOptional = productRepository.findById(dto.getId());
+            product = productOptional.orElseThrow(NoSuchElementException::new);
+            product.setCatalog(dto.getCatalog());
+            product.setName(dto.getName());
+            product.setCost(dto.getCost());
+            product.setDescribe(dto.getDescribe());
+            productRepository.save(product);
+        }
 
-    @Transactional
-    public void updateProduct(ProductDto productDto, Long id) {
-        Product product;
-        Optional<Product> productOptional = productRepository.findById(id);
-        product = productOptional.orElseThrow(NoSuchElementException::new);
-        product.setCatalog(productDto.getCatalog());
-        product.setName(productDto.getName());
-        product.setCost(productDto.getCost());
-        product.setDescribe(productDto.getDescribe());
-        productRepository.save(product);
     }
 
     @Transactional
@@ -86,22 +87,23 @@ public class ShopService {
         productRepository.deleteById(id);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<CashReceiptDto> getAllCashReceipts() {
         return cashReceiptsRepository.findAll().stream()
                 .map(cashReceiptConverter::convertFromEntity)
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public CashReceiptDto getCashReceiptById(Long id){
+    @Transactional(readOnly = true)
+    public CashReceiptDto getCashReceiptById(Long id) {
         return cashReceiptConverter.convertFromEntity(cashReceiptsRepository.findById(id)
-                .orElseThrow(NoSuchElementException::new));
+                .orElseThrow(() -> new ResourceNotFoundException("cash receipts with " + id + " not found")));
     }
 
-    @Transactional
-    public List<CashReceiptDto> getCashReceiptsByClient(Long id){
-        User user = userRepository.findById(id).orElseThrow(NoSuchElementException::new);
+    @Transactional(readOnly = true)
+    public List<CashReceiptDto> getCashReceiptsByClient(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("User with" + id + " not found"));
         return cashReceiptsRepository.findAllByUser(user)
                 .stream()
                 .map(cashReceiptConverter::convertFromEntity)
@@ -122,7 +124,6 @@ public class ShopService {
         });
         cashReceiptsRepository.save(cashReceipt);
     }
-
 
 
 }

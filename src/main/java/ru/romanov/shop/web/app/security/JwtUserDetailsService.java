@@ -6,7 +6,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import ru.romanov.shop.web.app.entity.User;
-import ru.romanov.shop.web.app.repository.UserRepository;
+import ru.romanov.shop.web.app.entity.repository.UserRepository;
 import ru.romanov.shop.web.app.security.jwt.JwtUserFactory;
 
 @Service

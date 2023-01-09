@@ -1,4 +1,4 @@
-package ru.romanov.shop.web.app.repository;
+package ru.romanov.shop.web.app.entity.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -9,6 +9,8 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository <Product, Long> {
     List<Product> findAllByName(String name);
+
     List<Product> findAllByCost(Double cost);
+
     List<Product> findAllByNameAndCost(String name, Double cost);
 }

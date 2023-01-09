@@ -2,17 +2,17 @@ package ru.romanov.shop.web.app.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.romanov.shop.web.app.dto.AuthenticationRequestDto;
 import ru.romanov.shop.web.app.entity.User;
-import ru.romanov.shop.web.app.repository.UserRepository;
 import ru.romanov.shop.web.app.security.jwt.JwtTokenProvider;
+import ru.romanov.shop.web.app.entity.repository.UserRepository;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +26,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
 
+    @Transactional(readOnly = true)
     public Map<Object, Object> doLogin(AuthenticationRequestDto dto) {
         try {
             String username = dto.getUsername();

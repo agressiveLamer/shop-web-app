@@ -5,10 +5,12 @@ import ru.romanov.shop.web.app.dto.ProductDto;
 import ru.romanov.shop.web.app.entity.Product;
 
 @Component
+/*@UtilityClass*/
 public class ProductConverter {
 
     public ProductDto convertFromEntity(Product entity) {
         final ProductDto productDto = new ProductDto();
+
         productDto.setId(entity.getId());
         productDto.setCost(entity.getCost());
         productDto.setDescribe(entity.getDescribe());
