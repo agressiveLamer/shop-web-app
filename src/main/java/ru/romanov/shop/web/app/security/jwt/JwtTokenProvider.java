@@ -1,13 +1,13 @@
 package ru.romanov.shop.web.app.security.jwt;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jws;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,9 +16,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import ru.romanov.shop.web.app.entity.Role;
+import ru.romanov.shop.web.app.exception.error.AppError;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashSet;
@@ -60,12 +63,21 @@ public class JwtTokenProvider {
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
-    public String resolveToken(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer")) {
-            return bearerToken.substring(7);
-        }
-        return null;
+    //TODO: Исключить дублирование кода
+
+    public String resolveToken(HttpServletRequest request, HttpServletResponse response) throws IOException, AccessDeniedException {
+            String bearerToken = request.getHeader("Authorization");
+            if (bearerToken != null && bearerToken.startsWith("Bearer")) {
+                return bearerToken.substring(7);
+            }
+                AppError appError = new AppError(HttpStatus.UNAUTHORIZED.value(), "Access denied. Token not found or authorization type is not correct");
+                response.setContentType("application/json");
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                OutputStream outputStream = response.getOutputStream();
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.writeValue(outputStream, appError);
+                outputStream.flush();
+                throw new AccessDeniedException("Access denied. Token not found or authorization type is not correct");
     }
 
     public String getUsername(String token) {
@@ -77,12 +89,31 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
-    public boolean isValidateToken(String token) throws IOException {
-            Jws<Claims> claims = Jwts.parserBuilder()
-                    .setSigningKey(SECRET)
-                    .build()
-                    .parseClaimsJws(token);
-            return !claims.getBody().getExpiration().before(new Date());
+    //TODO: Расширить список exception, сделать универсальный механизм возврата ошибок
+
+    public boolean isValidateToken(String token, HttpServletResponse response) throws IOException {
+        try {
+                Jws<Claims> claims = Jwts.parserBuilder()
+                        .setSigningKey(SECRET)
+                        .build()
+                        .parseClaimsJws(token);
+                return !claims.getBody().getExpiration().before(new Date());
+        } catch (JwtException | IllegalArgumentException e){
+
+            AppError appError = new AppError(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
+
+            response.setContentType("application/json");
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            OutputStream outputStream = response.getOutputStream();
+
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.writeValue(outputStream, appError);
+
+            outputStream.flush();
+
+            throw new JwtAuthException("JWT token is expired or invalid");
+        }
+
     }
 
     private Set<String> getRoleNames(Set<Role> userRoles) {
