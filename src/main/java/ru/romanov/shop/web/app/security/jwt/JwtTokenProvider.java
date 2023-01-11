@@ -63,21 +63,14 @@ public class JwtTokenProvider {
         return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
     }
 
-    //TODO: Исключить дублирование кода
-
     public String resolveToken(HttpServletRequest request, HttpServletResponse response) throws IOException, AccessDeniedException {
-            String bearerToken = request.getHeader("Authorization");
-            if (bearerToken != null && bearerToken.startsWith("Bearer")) {
-                return bearerToken.substring(7);
-            }
-                AppError appError = new AppError(HttpStatus.UNAUTHORIZED.value(), "Access denied. Token not found or authorization type is not correct");
-                response.setContentType("application/json");
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                OutputStream outputStream = response.getOutputStream();
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.writeValue(outputStream, appError);
-                outputStream.flush();
-                throw new AccessDeniedException("Access denied. Token not found or authorization type is not correct");
+        String bearerToken = request.getHeader("Authorization");
+        if (bearerToken != null && bearerToken.startsWith("Bearer")) {
+            return bearerToken.substring(7);
+        }
+        responseExceptionHttpMessage(HttpStatus.UNAUTHORIZED,
+                new AccessDeniedException("Access denied. Token not found or authorization type is not correct"), response);
+        throw new AccessDeniedException("Access denied. Token not found or authorization type is not correct");
     }
 
     public String getUsername(String token) {
@@ -93,24 +86,13 @@ public class JwtTokenProvider {
 
     public boolean isValidateToken(String token, HttpServletResponse response) throws IOException {
         try {
-                Jws<Claims> claims = Jwts.parserBuilder()
-                        .setSigningKey(SECRET)
-                        .build()
-                        .parseClaimsJws(token);
-                return !claims.getBody().getExpiration().before(new Date());
-        } catch (JwtException | IllegalArgumentException e){
-
-            AppError appError = new AppError(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
-
-            response.setContentType("application/json");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            OutputStream outputStream = response.getOutputStream();
-
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.writeValue(outputStream, appError);
-
-            outputStream.flush();
-
+            Jws<Claims> claims = Jwts.parserBuilder()
+                    .setSigningKey(SECRET)
+                    .build()
+                    .parseClaimsJws(token);
+            return !claims.getBody().getExpiration().before(new Date());
+        } catch (JwtException | IllegalArgumentException e) {
+            responseExceptionHttpMessage(HttpStatus.UNAUTHORIZED, e, response);
             throw new JwtAuthException("JWT token is expired or invalid");
         }
 
@@ -121,6 +103,20 @@ public class JwtTokenProvider {
 
         userRoles.forEach(role -> result.add(role.getName()));
         return result;
+
+    }
+
+    private void responseExceptionHttpMessage(HttpStatus httpStatus, Exception e, HttpServletResponse response) throws IOException {
+        AppError appError = new AppError(httpStatus.value(), e.getMessage());
+
+        response.setContentType("application/json");
+        response.setStatus(httpStatus.value());
+        OutputStream outputStream = response.getOutputStream();
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(outputStream, appError);
+
+        outputStream.flush();
 
     }
 
